@@ -1,0 +1,31 @@
+{
+    "authors": [
+        {
+            "name": "Colin Busse",
+            "email": "cbusseata@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "PostSorter\\": "src"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "5.5.*"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/cbusseata/PHPCsvParser"
+        }
+    ],
+    "require": {
+        "php":" >=7.0.0",
+        "parsecsv/php-parsecsv": "^0.4.5",
+        "symfony/filesystem": "^3.2",
+        "kzykhys/php-csv-parser": "dev-master"
+    },
+    "bin": [
+        "bin/postsorter"
+    ]
+}

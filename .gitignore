@@ -1,0 +1,10 @@
+# OS X
+.DS_Store
+
+# Composer
+composer.lock
+/vendor/
+
+# Ignore the output files but keep the directory
+output
+!output/.keep

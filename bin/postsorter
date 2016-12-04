@@ -1,0 +1,106 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Sorts posts into different categories:
+ *  - Top Posts
+ *  - Other Posts
+ *  - Daily Top Posts
+ * and saves them to output files
+ *
+ * Usage:
+ * 	postsorter [--inputFile] [--outputFormat=FORMAT] [--detailed]
+ *
+ */
+
+require __DIR__ . DIRECTORY_SEPARATOR . "../vendor/autoload.php";
+
+use PostSorter\Domain\TopPostValidator;
+use PostSorter\Domain\PostSorter;
+use PostSorter\Infrastructure\FileHandlerFactory;
+use PostSorter\Infrastructure\FilePostRepository;
+use Symfony\Component\Filesystem\Filesystem;
+
+
+ini_set( 'auto_detect_line_endings', true );
+
+
+const OPT_INPUTFILE    = 'inputFile';
+const OPT_OUTPUTFORMAT = 'outputFormat';
+const OPT_DETAILED     = 'detailed';
+
+
+/**
+ * Create an empty file with the given filepath, if it does not already exist.
+ *
+ * @param string $filepath
+ */
+function createFileIfNotExists( string $filepath )
+{
+    if ( file_exists( $filepath ) ) {
+        unlink( $filepath );
+    }
+    $fh = fopen( $filepath, 'w' ) or die( "Can't create file" );
+    fclose( $fh );
+}
+
+
+$outputDir = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'output';
+
+// --------------------------------------------------------------------------------------------------------
+
+// Get the CLI options
+// @TODO: If any further CLI options are to be added, switch to symphony/console
+
+$opts = getopt( '', array( OPT_INPUTFILE . ':', OPT_OUTPUTFORMAT . '::', OPT_DETAILED ) );
+
+$outputFormat = array_key_exists( OPT_OUTPUTFORMAT, $opts ) ? strtolower( $opts[ OPT_OUTPUTFORMAT ] ) : 'csv';
+if ( !in_array( $outputFormat, [ 'csv', 'json' ] ) ) {
+    throw new \Exception( 'Invalid output format' );
+}
+
+$detailedMode = array_key_exists( OPT_DETAILED, $opts );
+
+$fs = new Filesystem();
+$inputFile = ( $fs->isAbsolutePath( $opts[ OPT_INPUTFILE ] ) )
+    ? $opts[ OPT_INPUTFILE]
+    : getcwd() . DIRECTORY_SEPARATOR . $opts[ OPT_INPUTFILE ];
+
+// --------------------------------------------------------------------------------------------------------
+
+// Create the output files
+$topPostsFile = $outputDir . DIRECTORY_SEPARATOR . sprintf( 'top_posts.%s', $outputFormat );
+$otherPostsFile = $outputDir . DIRECTORY_SEPARATOR . sprintf( 'other_posts.%s', $outputFormat );
+$dailyTopPostsFile = $outputDir . DIRECTORY_SEPARATOR . sprintf( 'daily_top_posts.%s', $outputFormat );
+
+createFileIfNotExists( $topPostsFile );
+createFileIfNotExists( $otherPostsFile );
+createFileIfNotExists( $dailyTopPostsFile );
+
+
+$factory = new FileHandlerFactory();
+
+// Instantiate the necessary handlers and repositories
+$inputHandler = $factory->getFileHandler( $inputFile );
+$inputRepository = new FilePostRepository( $inputHandler );
+
+$topPostsHandler = $factory->getFileHandler( $topPostsFile );
+$topPostsRepository = new FilePostRepository( $topPostsHandler );
+
+$otherPostsHandler = $factory->getFileHandler( $otherPostsFile );
+$otherPostsRepository = new FilePostRepository( $otherPostsHandler );
+
+$dailyTopPostsHandler = $factory->getFileHandler( $dailyTopPostsFile );
+$dailyTopPostsRepository = new FilePostRepository( $dailyTopPostsHandler );
+
+
+// Sort/save the posts
+print "Sorting posts...\n";
+
+$postSorter = new PostSorter( new TopPostValidator( 'public', 11, 9001, 39 ) );
+$postSorter->sortPosts( $inputRepository->getAllPosts() );
+
+$topPostsRepository->savePosts( $postSorter->getTopPosts(), !$detailedMode );
+$otherPostsRepository->savePosts( $postSorter->getOtherPosts(), !$detailedMode );
+$dailyTopPostsRepository->savePosts( $postSorter->getDailyTopPosts(), !$detailedMode );
+
+print "Done!\n";
