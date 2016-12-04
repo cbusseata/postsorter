@@ -12,7 +12,7 @@ composer install --dev
 
 Example usage:
 ````bash
-bin/postsorter --inputFile="posts.csv" --outputFormat="json" --detailed
+bin/postsorter --inputFile="posts.csv" --outputFormat="csv" --detailed
 ````
 
 Output files will be written to the 'output' directory: top_posts.csv, daily_top_posts.csv, other_posts.csv (or .json, depending on the --outputFormat CLI option).
