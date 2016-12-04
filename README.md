@@ -23,7 +23,7 @@ The --inputFile option will accept any absolute or relative filepath.  This opti
 
 The --outputFormat option will accept 'json' or 'csv' (the default value is 'csv').
 
-Without --detailed, only ids will be written to the output files.
+Without --detailed, only IDs will be written to the output files.
 
 To run tests:
 ````bash
